@@ -6,7 +6,7 @@
 /*   By: skock <skock@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/02 14:31:11 by skock             #+#    #+#             */
-/*   Updated: 2025/02/03 14:54:18 by skock            ###   ########.fr       */
+/*   Updated: 2025/02/05 14:05:06 by skock            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,11 +38,13 @@ void	access_cmd_1(t_pipex *pipex)
 {
 	int		i = 0;
 	bool	ok;
+	char	**tab;
 
 	ok = false;
+	tab = ft_split(pipex->av[2], ' ');
 	while (pipex->env[i])
 	{
-		if (!access(ft_strjoin(pipex->env[i], pipex->av[2]), X_OK))
+		if (!access(ft_strjoin(pipex->env[i], tab[0]), X_OK))
 		{
 			ok = true;
 			break ;
@@ -52,18 +54,20 @@ void	access_cmd_1(t_pipex *pipex)
 	if (ok == false)
 		pipex->path_cmd_1 = NULL;
 	else
-		pipex->path_cmd_1 = ft_strjoin(pipex->env[i], pipex->av[2]);
+		pipex->path_cmd_1 = ft_strjoin(pipex->env[i], tab[0]);
 }
 
 void	access_cmd_2(t_pipex *pipex)
 {
 	int		i = 0;
 	bool	ok;
+	char	**tab;
 
 	ok = false;
+	tab = ft_split(pipex->av[3], ' ');
 	while (pipex->env[i])
 	{
-		if (!access(ft_strjoin(pipex->env[i], pipex->av[3]), X_OK))
+		if (!access(ft_strjoin(pipex->env[i], tab[0]), X_OK))
 		{
 			ok = true;
 			break ;
@@ -73,7 +77,7 @@ void	access_cmd_2(t_pipex *pipex)
 	if (ok == false)
 		pipex->path_cmd_2 = NULL;
 	else
-		pipex->path_cmd_2 = ft_strjoin(pipex->env[i], pipex->av[3]);
+		pipex->path_cmd_2 = ft_strjoin(pipex->env[i], tab[0]);
 }
 
 void	create_file(t_pipex *pipex)
@@ -88,32 +92,47 @@ void	create_file(t_pipex *pipex)
 
 void	child_process(t_pipex *pipex, int *fd, char **env)
 {
-	close(fd[0]);
-	dup2(pipex->infile_fd, STDIN_FILENO);
-	if (!pipex->path_cmd_2)
-			dup2(pipex->outfile_fd, STDOUT_FILENO);
-	else
-			dup2(fd[1], STDOUT_FILENO);
-	close(fd[1]);
-	close(pipex->infile_fd);
-	if (pipex->outfile_fd > 2)
-			close(pipex->outfile_fd);
-	if (pipex->flag == 0)
+	if (pipex->flag == 1)
 	{
-		pipex->flag = 1;
-		execve(pipex->path_cmd_1, pipex->argv, env);
+		dup2(fd[0], STDIN_FILENO);
+		close(fd[0]);
 	}
 	else
-		execve(pipex->path_cmd_2, pipex->argv, env);
-
+	{
+		dup2(pipex->infile_fd, STDIN_FILENO);
+		close(pipex->infile_fd);
+	}
+	if (pipex->flag == 1)
+	{
+		dup2(pipex->outfile_fd, STDOUT_FILENO);
+		close(pipex->outfile_fd);
+	}
+	else
+	{
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[1]);
+	}
+	if (pipex->flag == 0)
+	{
+		execve(pipex->path_cmd_1, pipex->argv_cmd_1, env);
+		exit(1);
+	}
+	else
+	{
+		execve(pipex->path_cmd_2, pipex->argv_cmd_2, env);
+		exit(1);
+	}
 }
 
 void	parent_process(t_pipex *pipex, int *fd)
 {
-	close(fd[1]);
-	close(pipex->infile_fd);
-	pipex->infile_fd = dup(fd[0]);
-	close(fd[0]);
+	if (pipex->flag == 0)
+		close(fd[1]);
+	else
+	{
+		close(fd[0]);
+		close(fd[1]);
+	}
 }
 
 void	exec(t_pipex *pipex, char **env)
@@ -125,9 +144,12 @@ void	exec(t_pipex *pipex, char **env)
 	pipe(fd);
 	loop = 2;
 	pipex->flag = 0;
-	pipex->argv[0] = pipex->av[2];
-	pipex->argv[1] = pipex->av[3];
-	pipex->argv[2] = NULL;
+	pipex->argv_cmd_1 = ft_split(pipex->av[2], ' ');
+	free(pipex->argv_cmd_1[0]);
+	pipex->argv_cmd_1[0] = ft_strdup(pipex->path_cmd_1);
+	pipex->argv_cmd_2 = ft_split(pipex->av[3], ' ');
+	for (int j = 0; pipex->argv_cmd_1[j]; j++)
+		printf("%s\n", pipex->argv_cmd_1[j]);
 	while (loop > 0)
 	{
 		pid = fork();
@@ -135,9 +157,9 @@ void	exec(t_pipex *pipex, char **env)
 			child_process(pipex, fd, env);
 		else
 			parent_process(pipex, fd);
+		pipex->flag = 1;
 		loop--;
 	}
-	printf("exit loop\n");
 	return ;
 }
 

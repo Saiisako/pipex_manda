@@ -6,7 +6,7 @@
 /*   By: skock <skock@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/02 14:13:58 by skock             #+#    #+#             */
-/*   Updated: 2025/02/03 14:39:05 by skock            ###   ########.fr       */
+/*   Updated: 2025/02/04 19:47:46 by skock            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,8 @@ typedef struct s_pipex
 {
 	char	**env;
 	char	**av;
-	char	**argv;
+	char	**argv_cmd_1;
+	char	**argv_cmd_2;
 	char	*path_cmd_1;
 	char	*path_cmd_2;
 	int		ac;
