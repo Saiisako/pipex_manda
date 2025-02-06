@@ -5,7 +5,7 @@ RM = rm -rf
 LIBFT = library/libft/libft.a
 LIBFT_FLAGS = -L./library/libft -lft
 
-SRCS	=	pipex.c
+SRCS	=	pipex.c free.c\
 
 
 OBJS_BONUS = $(SRCS_BONUS:.c=.o)
